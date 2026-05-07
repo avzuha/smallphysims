@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Planck's Constant Simulation (LED Method)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Planck's Constant Simulation (LED Method)</h1>
+<p>Adjust voltage and record when LED starts glowing.</p>
+
+<div class="experiment-area">
+
+  <div class="led-container">
+    <div id="led-red" class="led led-red"></div>
+    <span>Red (660nm)</span>
+    <input type="range" id="volt-red" min="0" max="3" step="0.01" value="0">
+    <div id="val-red">0.00 V</div>
+    <button onclick="record('red')">Record</button>
+  </div>
+
+  <div class="led-container">
+    <div id="led-yellow" class="led led-yellow"></div>
+    <span>Yellow (580nm)</span>
+    <input type="range" id="volt-yellow" min="0" max="3" step="0.01" value="0">
+    <div id="val-yellow">0.00 V</div>
+    <button onclick="record('yellow')">Record</button>
+  </div>
+
+  <div class="led-container">
+    <div id="led-green" class="led led-green"></div>
+    <span>Green (525nm)</span>
+    <input type="range" id="volt-green" min="0" max="3" step="0.01" value="0">
+    <div id="val-green">0.00 V</div>
+    <button onclick="record('green')">Record</button>
+  </div>
+
+  <div class="led-container">
+    <div id="led-blue" class="led led-blue"></div>
+    <span>Blue (450nm)</span>
+    <input type="range" id="volt-blue" min="0" max="3" step="0.01" value="0">
+    <div id="val-blue">0.00 V</div>
+    <button onclick="record('blue')">Record</button>
+  </div>
+
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Color</th>
+      <th>Wavelength (nm)</th>
+      <th>Voltage (V)</th>
+      <th>Calculated h (J·s)</th>
+    </tr>
+  </thead>
+  <tbody id="results-body"></tbody>
+</table>
+
+<div class="result-panel" id="avg-h">
+  Average Planck's Constant: ---
+</div>
+
+<button onclick="plotGraph()">Plot Graph</button>
+
+<div id="graph-section" style="display:none; margin-top:15px;">
+  <canvas id="graphCanvas" width="800" height="450"></canvas>
+  <div class="result-panel" id="regression-result"></div>
+  <div class="result-panel" id="error-result"></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
+
+        ctx.beginPath();
+        ctx.arc(px,py,5,0,2*Math.PI);
+        ctx.fill();
+    });
+
+    // line
+    ctx.strokeStyle="yellow";
+    ctx.beginPath();
+    ctx.moveTo(margin,margin+height);
+    ctx.lineTo(
+        margin+width,
+        margin+height-(slope*maxX/maxY)*height
+    );
+    ctx.stroke();
+
+    document.getElementById("regression-result").innerText =
+        `Regression h: ${slope.toExponential(4)} J·s`;
+
+    let avg = recordedValues.reduce((a,b)=>a+b,0)/recordedValues.length;
+    let error = Math.abs((slope-avg)/avg)*100;
+
+    document.getElementById("error-result").innerText =
+        `Percentage Error: ${error.toFixed(2)}%`;
+}
+
+</script>
+
+</body>
+</html>

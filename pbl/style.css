@@ -1,0 +1,99 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #121212;
+  color: white;
+  text-align: center;
+}
+
+h1 { color: #00d4ff; }
+
+.experiment-area {
+  display: flex;
+  justify-content: space-around;
+  margin: 30px;
+  background: #1e1e1e;
+  padding: 30px;
+  border-radius: 15px;
+}
+
+.led-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.led {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #333;
+  margin-bottom: 10px;
+}
+
+.led.active { box-shadow: 0 0 30px currentColor; }
+
+.led-red.active { background: red; color: red; }
+.led-yellow.active { background: yellow; color: yellow; }
+.led-green.active { background: lime; color: lime; }
+.led-blue.active { background: blue; color: blue; }
+
+input { width: 120px; }
+
+button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background: #00d4ff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+table {
+  margin: auto;
+  margin-top: 30px;
+  border-collapse: collapse;
+  width: 80%;
+}
+
+th, td {
+  border: 1px solid #444;
+  padding: 10px;
+}
+
+th { color: #00d4ff; }
+
+.result-panel {
+  margin-top: 10px;
+  color: #00ff88;
+}
+
+
+        ctx.beginPath();
+        ctx.arc(px,py,5,0,2*Math.PI);
+        ctx.fill();
+    });
+
+    // line
+    ctx.strokeStyle="yellow";
+    ctx.beginPath();
+    ctx.moveTo(margin,margin+height);
+    ctx.lineTo(
+        margin+width,
+        margin+height-(slope*maxX/maxY)*height
+    );
+    ctx.stroke();
+
+    document.getElementById("regression-result").innerText =
+        `Regression h: ${slope.toExponential(4)} J·s`;
+
+    let avg = recordedValues.reduce((a,b)=>a+b,0)/recordedValues.length;
+    let error = Math.abs((slope-avg)/avg)*100;
+
+    document.getElementById("error-result").innerText =
+        `Percentage Error: ${error.toFixed(2)}%`;
+}
+
+</script>
+
+</body>
+</html>
