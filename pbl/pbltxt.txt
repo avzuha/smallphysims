@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Planck's Constant Simulation (LED Method)</title>
+
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #121212;
+    color: white;
+    text-align: center;
+}
+
+h1 { color: #00d4ff; }
+
+.experiment-area {
+    display: flex;
+    justify-content: space-around;
+    margin: 30px;
+    background: #1e1e1e;
+    padding: 30px;
+    border-radius: 15px;
+}
+
+.led-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.led {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #333;
+    margin-bottom: 10px;
+}
+
+.led.active { box-shadow: 0 0 30px currentColor; }
+
+.led-red.active { background: red; color: red; }
+.led-yellow.active { background: yellow; color: yellow; }
+.led-green.active { background: lime; color: lime; }
+.led-blue.active { background: blue; color: blue; }
+
+input { width: 120px; }
+
+button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background: #00d4ff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+table {
+    margin: auto;
+    margin-top: 30px;
+    border-collapse: collapse;
+    width: 80%;
+}
+
+th, td {
+    border: 1px solid #444;
+    padding: 10px;
+}
+
+th { color: #00d4ff; }
+
+.result-panel {
+    margin-top: 10px;
+    color: #00ff88;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Planck's Constant Simulation (LED Method)</h1>
+<p>Adjust voltage and record when LED starts glowing.</p>
+
+<div class="experiment-area">
+
+<div class="led-container">
+<div id="led-red" class="led led-red"></div>
+<span>Red (660nm)</span>
+<input type="range" id="volt-red" min="0" max="3" step="0.01" value="0">
+<div id="val-red">0.00 V</div>
+<button onclick="record('red')">Record</button>
+</div>
+
+<div class="led-container">
+<div id="led-yellow" class="led led-yellow"></div>
+<span>Yellow (580nm)</span>
+<input type="range" id="volt-yellow" min="0" max="3" step="0.01" value="0">
+<div id="val-yellow">0.00 V</div>
+<button onclick="record('yellow')">Record</button>
+</div>
+
+<div class="led-container">
+<div id="led-green" class="led led-green"></div>
+<span>Green (525nm)</span>
+<input type="range" id="volt-green" min="0" max="3" step="0.01" value="0">
+<div id="val-green">0.00 V</div>
+<button onclick="record('green')">Record</button>
+</div>
+
+<div class="led-container">
+<div id="led-blue" class="led led-blue"></div>
+<span>Blue (450nm)</span>
+<input type="range" id="volt-blue" min="0" max="3" step="0.01" value="0">
+<div id="val-blue">0.00 V</div>
+<button onclick="record('blue')">Record</button>
+</div>
+
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Color</th>
+<th>Wavelength (nm)</th>
+<th>Voltage (V)</th>
+<th>Calculated h (J·s)</th>
+</tr>
+</thead>
+<tbody id="results-body"></tbody>
+</table>
+
+<div class="result-panel" id="avg-h">
+Average Planck's Constant: ---
+</div>
+
+<button onclick="plotGraph()">Plot Graph</button>
+
+<div id="graph-section" style="display:none; margin-top:15px;">
+<canvas id="graphCanvas" width="800" height="450"></canvas>
+
+<div class="result-panel" id="regression-result"></div>
+<div class="result-panel" id="error-result"></div>
+</div>
+
+<script>
+
+const e = 1.602e-19;
+const c = 3e8;
+const h_actual = 6.626e-34;
+
+const ledData = {
+    red: { lambda: 660e-9, color: "Red" },
+    yellow: { lambda: 580e-9, color: "Yellow" },
+    green: { lambda: 525e-9, color: "Green" },
+    blue: { lambda: 450e-9, color: "Blue" }
+};
+
+let recordedValues = [];
+let graphData = [];
+
+function getThreshold(lambda) {
+    return (h_actual * c) / (e * lambda);
+}
+
+function updateLED(color) {
+    let v = parseFloat(document.getElementById(`volt-${color}`).value);
+    document.getElementById(`val-${color}`).innerText = v.toFixed(2)+" V";
+
+    if(v >= getThreshold(ledData[color].lambda))
+        document.getElementById(`led-${color}`).classList.add("active");
+    else
+        document.getElementById(`led-${color}`).classList.remove("active");
+}
+
+["red","yellow","green","blue"].forEach(c=>{
+    document.getElementById(`volt-${c}`)
+    .addEventListener("input",()=>updateLED(c));
+    updateLED(c);
+});
+
+function record(color){
+    let v = parseFloat(document.getElementById(`volt-${color}`).value);
+    let lambda = ledData[color].lambda;
+
+    let h_calc = (e*lambda*v)/c;
+    let freq = c/lambda;
+    let energy = e*v;
+
+    let row = document.getElementById("results-body").insertRow();
+    row.innerHTML = `
+        <td>${ledData[color].color}</td>
+        <td>${(lambda*1e9).toFixed(0)}</td>
+        <td>${v.toFixed(2)}</td>
+        <td>${h_calc.toExponential(4)}</td>
+    `;
+
+    recordedValues.push(h_calc);
+    graphData.push({freq, energy});
+
+    let avg = recordedValues.reduce((a,b)=>a+b,0)/recordedValues.length;
+    document.getElementById("avg-h").innerText =
+        `Average Planck's Constant: ${avg.toExponential(4)} J·s`;
+}
+
+function plotGraph(){
+
+    if(graphData.length<2){
+        alert("Record at least 2 values!");
+        return;
+    }
+
+    document.getElementById("graph-section").style.display="block";
+
+    let x = graphData.map(d=>d.freq);
+    let y = graphData.map(d=>d.energy);
+
+    let n=x.length;
+    let sumX=x.reduce((a,b)=>a+b,0);
+    let sumY=y.reduce((a,b)=>a+b,0);
+    let sumXY=x.reduce((s,xi,i)=>s+xi*y[i],0);
+    let sumX2=x.reduce((s,xi)=>s+xi*xi,0);
+
+    let slope=(n*sumXY - sumX*sumY)/(n*sumX2 - sumX*sumX);
+
+    const canvas=document.getElementById("graphCanvas");
+    const ctx=canvas.getContext("2d");
+    ctx.clearRect(0,0,800,450);
+
+    const margin=80, width=650, height=300;
+    let maxX=Math.max(...x), maxY=Math.max(...y);
+
+    // axes
+    ctx.strokeStyle="white";
+    ctx.beginPath();
+    ctx.moveTo(margin,margin);
+    ctx.lineTo(margin,margin+height);
+    ctx.lineTo(margin+width,margin+height);
+    ctx.stroke();
+
+    // ticks
+    let xTicks=5, yTicks=5;
+    ctx.fillStyle="white";
+    ctx.font="12px Arial";
+
+    for(let i=0;i<=xTicks;i++){
+        let val=(i/xTicks)*maxX;
+        let px=margin+(i/xTicks)*width;
+
+        ctx.beginPath();
+        ctx.moveTo(px,margin+height);
+        ctx.lineTo(px,margin+height+5);
+        ctx.stroke();
+
+        ctx.fillText(val.toExponential(1),px-25,margin+height+20);
+    }
+
+    for(let i=0;i<=yTicks;i++){
+        let val=(i/yTicks)*maxY;
+        let py=margin+height-(i/yTicks)*height;
+
+        ctx.beginPath();
+        ctx.moveTo(margin-5,py);
+        ctx.lineTo(margin,py);
+        ctx.stroke();
+
+        ctx.fillText(val.toExponential(1),15,py+4);
+    }
+
+    // labels
+    ctx.font="14px Arial";
+    ctx.fillText("Frequency (Hz)", margin+width/2-60, margin+height+40);
+
+    ctx.save();
+    ctx.translate(10,margin+height/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillText("Energy (J)",0,0);
+    ctx.restore();
+
+    // points
+    ctx.fillStyle="cyan";
+    x.forEach((xi,i)=>{
+        let px=margin+(xi/maxX)*width;
+        let py=margin+height-(y[i]/maxY)*height;
+        ctx.beginPath();
+        ctx.arc(px,py,5,0,2*Math.PI);
+        ctx.fill();
+    });
+
+    // line
+    ctx.strokeStyle="yellow";
+    ctx.beginPath();
+    ctx.moveTo(margin,margin+height);
+    ctx.lineTo(
+        margin+width,
+        margin+height-(slope*maxX/maxY)*height
+    );
+    ctx.stroke();
+
+    document.getElementById("regression-result").innerText =
+        `Regression h: ${slope.toExponential(4)} J·s`;
+
+    let avg = recordedValues.reduce((a,b)=>a+b,0)/recordedValues.length;
+    let error = Math.abs((slope-avg)/avg)*100;
+
+    document.getElementById("error-result").innerText =
+        `Percentage Error: ${error.toFixed(2)}%`;
+}
+
+</script>
+
+</body>
+</html>
